@@ -8,9 +8,16 @@ class Sandbox {
 
     onBackendMessage(e) {
         const { action, params } = e.data;
-        const method = this['backend_' + action];
-        if (typeof(method) === 'function') {
-            method.call(this, params);
+        switch (action) {
+            case "loadScript":
+               this.backend_loadScript(params);
+               break;
+            case "setScriptsOptions":
+                this.backend_setScriptsOptions(params);
+                break;
+            case "findTerm":
+                this.backend_findTerm(params);
+                break;
         }
     }
 
@@ -18,15 +25,15 @@ class Sandbox {
         let gitbase = 'https://raw.githubusercontent.com/ninja33/ODH/master/src/dict/';
         let url = name;
 
-        if (url.indexOf('://') == -1) {
+        if (url.indexOf('://') === -1) {
             url = '/dict/' + url;
         } else {
             //build remote script url with gitbase(https://) if prefix lib:// existing.
-            url = (url.indexOf('lib://') != -1) ? gitbase + url.replace('lib://', '') : url;            
+            url = (url.indexOf('lib://') !== -1) ? gitbase + url.replace('lib://', '') : url;
         }
 
         //add .js suffix if missing.
-        url = (url.indexOf('.js') == -1) ? url + '.js' : url;
+        url = (url.indexOf('.js') === -1) ? url + '.js' : url;
         return url;
     }
 

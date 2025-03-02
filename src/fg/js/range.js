@@ -1,7 +1,7 @@
 function rangeFromPoint(point) {
     if (!document.caretRangeFromPoint) {
         document.caretRangeFromPoint = (x, y) => {
-            const position = document.caretPositionFromPoint(x,y);
+            const position = document.caretPositionFromPoint(x, y);
             if (position && position.offsetNode && position.offsetNode.nodeType === Node.TEXT_NODE) {
                 const range = document.createRange();
                 range.setStart(position.offsetNode, position.offset);

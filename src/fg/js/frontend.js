@@ -105,15 +105,15 @@ class ODHFront {
         let result = await getTranslation(expression);
         if (result == null || result.length == 0) return;
         this.notes = this.buildNote(result);
-        this.popup.showNextTo({ x: this.point.x, y: this.point.y, }, await this.renderPopup(this.notes));
+        this.popup.showNextTo({x: this.point.x, y: this.point.y,}, await this.renderPopup(this.notes));
 
     }
 
     onBgMessage(request, sender, callback) {
-        const { action, params } = request;
+        const {action, params} = request;
         const method = this['api_' + action];
 
-        if (typeof(method) === 'function') {
+        if (typeof (method) === 'function') {
             params.callback = callback;
             method.call(this, params);
         }
@@ -122,7 +122,7 @@ class ODHFront {
     }
 
     api_setFrontendOptions(params) {
-        let { options, callback } = params;
+        let {options, callback} = params;
         this.options = options;
         this.enabled = options.enabled;
         this.mouseselection = options.mouseselection;
@@ -133,15 +133,15 @@ class ODHFront {
     }
 
     onFrameMessage(e) {
-        const { action, params } = e.data;
+        const {action, params} = e.data;
         const method = this['api_' + action];
-        if (typeof(method) === 'function') {
+        if (typeof (method) === 'function') {
             method.call(this, params);
         }
     }
 
     async api_addNote(params) {
-        let { nindex, dindex, context } = params;
+        let {nindex, dindex, context} = params;
 
         let notedef = Object.assign({}, this.notes[nindex]);
         notedef.definition = this.notes[nindex].css + this.notes[nindex].definitions[dindex];
@@ -149,11 +149,11 @@ class ODHFront {
         notedef.sentence = context;
         notedef.url = window.location.href;
         let response = await addNote(notedef);
-        this.popup.sendMessage('setActionState', { response, params });
+        this.popup.sendMessage('setActionState', {response, params});
     }
 
     async api_playAudio(params) {
-        let { nindex, dindex } = params;
+        let {nindex, dindex} = params;
         let url = this.notes[nindex].audios[dindex];
         let response = await playAudio(url);
     }
@@ -230,7 +230,7 @@ class ODHFront {
                     <span class="odh-extra">${note.extrainfo}</span>
                 </div>`;
             for (const [dindex, definition] of note.definitions.entries()) {
-                let button = (services == 'none' || services == '') ? '' : `<img ${imageclass} data-nindex="${nindex}" data-dindex="${dindex}" src="${chrome.runtime.getURL('fg/img/'+ image)}" />`;
+                let button = (services == 'none' || services == '') ? '' : `<img ${imageclass} data-nindex="${nindex}" data-dindex="${dindex}" src="${chrome.runtime.getURL('fg/img/' + image)}" />`;
                 content += `<div class="odh-definition">${button}${definition}</div>`;
             }
             content += '</div>';
@@ -245,8 +245,8 @@ class ODHFront {
         return `
         <html lang="en">
             <head><meta charset="UTF-8"><title></title>
-                <link rel="stylesheet" href="${root+'fg/css/frame.css'}">
-                <link rel="stylesheet" href="${root+'fg/css/spell.css'}">
+                <link rel="stylesheet" href="${root + 'fg/css/frame.css'}">
+                <link rel="stylesheet" href="${root + 'fg/css/spell.css'}">
             </head>
             <body style="margin:0px;">
             <div class="odh-notes">`;
@@ -263,15 +263,15 @@ class ODHFront {
             </div>
             <div class="icons hidden"">
                 <img id="plus" src="${button}"/>
-                <img id="load" src="${root+'fg/img/load.gif'}"/>
-                <img id="good" src="${root+'fg/img/good.png'}"/>
-                <img id="fail" src="${root+'fg/img/fail.png'}"/>
-                <img id="play" src="${root+'fg/img/play.png'}"/>
+                <img id="load" src="${root + 'fg/img/load.gif'}"/>
+                <img id="good" src="${root + 'fg/img/good.png'}"/>
+                <img id="fail" src="${root + 'fg/img/fail.png'}"/>
+                <img id="play" src="${root + 'fg/img/play.png'}"/>
                 <div id="context">${this.sentence}</div>
                 <div id="monolingual">${monolingual}</div>
                 </div>
-            <script src="${root+'fg/js/spell.js'}"></script>
-            <script src="${root+'fg/js/frame.js'}"></script>
+            <script src="${root + 'fg/js/spell.js'}"></script>
+            <script src="${root + 'fg/js/frame.js'}"></script>
             </body>
         </html>`;
     }

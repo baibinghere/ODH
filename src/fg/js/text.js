@@ -16,13 +16,13 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-String.prototype.replaceAll = function(search, replacement) {
+String.prototype.replaceAll = function (search, replacement) {
     let target = this;
     search = escapeRegExp(search);
     return target.replace(new RegExp(search, 'g'), replacement);
 };
 
-String.prototype.searchAll = function(search) {
+String.prototype.searchAll = function (search) {
     let target = this;
     search = escapeRegExp(search);
     let regex = new RegExp(search, 'gi');
@@ -102,9 +102,9 @@ function cutSentence(word, offset, sentence, sentenceNum) {
             }
         }
 
-        return arr.slice(start, end + 1).join('').replaceAll(word, word.replace(/[^\s]+/g,'<b>\$&</b>'));
+        return arr.slice(start, end + 1).join('').replaceAll(word, word.replace(/[^\s]+/g, '<b>\$&</b>'));
     } else {
-        return sentence.replace(word, word.replace(/[^\s]+/g,'<b>\$&</b>'));
+        return sentence.replace(word, word.replace(/[^\s]+/g, '<b>\$&</b>'));
     }
 }
 
@@ -116,7 +116,7 @@ function getSelectionOffset(node) {
     let start = clone.toString().length;
     clone.setEnd(range.endContainer, range.endOffset);
     let end = clone.toString().length;
-    return { start, end };
+    return {start, end};
 
 }
 
@@ -158,12 +158,12 @@ function getPDFNode(node) {
         backwardindex -= 1;
         let nodetext = node.textContent;
         if (nodetext == '-')
-            sentence = sentence.slice(0, sentence.length-1);
+            sentence = sentence.slice(0, sentence.length - 1);
         else
             sentence += (nodetext[nodetext.length - 1] == '-') ? nodetext.slice(0, nodetext.length - 1) : nodetext + ' ';
     }
 
-    return { sentence, offset };
+    return {sentence, offset};
 }
 
 function getSentence(sentenceNum) {

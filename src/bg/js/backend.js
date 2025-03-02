@@ -28,7 +28,7 @@ class ODHBack {
     }
 
     onCommand(command) {
-        if (command != 'enabled') return;
+        if (command !== 'enabled') return;
         this.options.enabled = !this.options.enabled;
         this.setFrontendOptions(this.options);
         optionsSave(this.options);
@@ -41,7 +41,6 @@ class ODHBack {
         }
         if (details.reason === 'update') {
             chrome.tabs.create({ url: chrome.extension.getURL('bg/update.html') });
-            return;
         }
     }
 
@@ -89,7 +88,7 @@ class ODHBack {
         let note = {
             deckName: options.deckname,
             modelName: options.typename,
-            options: { allowDuplicate: options.duplicate == '1' ? true : false },
+            options: { allowDuplicate: options.duplicate === '1' ? true : false },
             fields: {},
             tags: []
         };
@@ -122,11 +121,34 @@ class ODHBack {
     // Message Hub and Handler start from here ...
     onMessage(request, sender, callback) {
         const { action, params } = request;
-        const method = this['api_' + action];
-
-        if (typeof(method) === 'function') {
-            params.callback = callback;
-            method.call(this, params);
+        switch (action) {
+            case "initBackend":
+                this.api_initBackend(params);
+                break;
+            case "Fetch":
+                this.api_Fetch(params);
+                break;
+            case "Deinflect":
+                this.api_Deinflect(params);
+                break;
+            case "getBuiltin":
+                this.api_getBuiltin(params);
+                break;
+            case "getLocale":
+                this.api_getLocale(params);
+                break;
+            case "isConnected":
+                this.api_isConnected(params);
+                break;
+            case "getTranslation":
+                this.api_getTranslation(params);
+                break;
+            case "addNote":
+                this.api_addNote(params);
+                break;
+            case "playAudio":
+                this.api_playAudio(params);
+                break;
         }
         return true;
     }
@@ -238,7 +260,7 @@ class ODHBack {
         }
     }
 
-    // Option page and Brower Action page requests handlers.
+    // Option page and Browser Action page requests handlers.
     async opt_optionsChanged(options) {
         this.setFrontendOptions(options);
 
@@ -259,7 +281,7 @@ class ODHBack {
         let defaultscripts = ['builtin_encn_Collins'];
         let newscripts = `${options.sysscripts},${options.udfscripts}`;
         let loadresults = null;
-        if (!this.options || (`${this.options.sysscripts},${this.options.udfscripts}` != newscripts)) {
+        if (!this.options || (`${this.options.sysscripts},${this.options.udfscripts}` !== newscripts)) {
             const scriptsset = Array.from(new Set(defaultscripts.concat(newscripts.split(',').filter(x => x).map(x => x.trim()))));
             loadresults = await this.loadScripts(scriptsset);
         }
