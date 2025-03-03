@@ -1,26 +1,88 @@
-/* global odhback, localizeHtmlPage, utilAsync, optionsLoad, optionsSave */
-async function populateAnkiDeckAndModel(options) {
+/* global localizeHtmlPage, utilAsync */
+
+// Default options
+const defaultOptions = {
+    enabled: true,
+    mouseselection: true,
+    hotkey: '16',
+
+    dictSelected: 'builtin_encn_Collins',
+    monolingual: '0',
+    preferredaudio: '0',
+    maxcontext: '1',
+    maxexample: '2',
+
+    services: 'none',
+    id: '',
+    password: '',
+
+    tags: 'ODH',
+    duplicate: '0',
+
+    deckname: 'Default',
+    typename: 'Basic',
+    expression: 'Front',
+    reading: '',
+    extrainfo: '',
+    definition: 'Back',
+    definitions: '',
+    sentence: '',
+    url: '',
+    audio: '',
+
+    sysscripts: 'builtin_encn_Collins',
+    udfscripts: '',
+
+    dictNamelist: []
+};
+
+// Load options from storage
+async function optionsLoad() {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(defaultOptions, (options) => {
+            resolve(options);
+        });
+    });
+}
+
+// Save options to storage
+async function optionsSave(options) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.set(options, () => {
+            resolve();
+        });
+    });
+}
+
+// 为 Service Worker 环境导出函数
+if (typeof self !== 'undefined') {
+    self.optionsLoad = optionsLoad;
+    self.optionsSave = optionsSave;
+}
+
+// The following code is for the options page UI
+async function populateAnkiDeckAndModel(options, odhback) {
     let names = [];
     $('#deckname').empty();
-    names = await odhback().opt_getDeckNames();
+    names = await odhback.opt_getDeckNames();
     if (names !== null) {
         names.forEach(name => $('#deckname').append($('<option>', { value: name, text: name })));
     }
     $('#deckname').val(options.deckname);
 
     $('#typename').empty();
-    names = await odhback().opt_getModelNames();
+    names = await odhback.opt_getModelNames();
     if (names !== null) {
         names.forEach(name => $('#typename').append($('<option>', { value: name, text: name })));
     }
     $('#typename').val(options.typename);
 }
 
-async function populateAnkiFields(options) {
+async function populateAnkiFields(options, odhback) {
     const modelName = $('#typename').val() || options.typename;
     if (modelName === null) return;
 
-    let names = await odhback().opt_getModelFieldNames(modelName);
+    let names = await odhback.opt_getModelFieldNames(modelName);
     if (names == null) return;
 
     let fields = ['expression', 'reading', 'extrainfo', 'definition', 'definitions', 'sentence', 'url', 'audio'];
@@ -32,7 +94,7 @@ async function populateAnkiFields(options) {
     });
 }
 
-async function updateAnkiStatus(options) {
+async function updateAnkiStatus(options, odhback) {
     $('#services-status').text(chrome.i18n.getMessage('msgConnecting'));
     $('#anki-options').hide();
     if (options.services == 'ankiweb')
@@ -41,20 +103,19 @@ async function updateAnkiStatus(options) {
         $('#user-options').hide();
     }
 
-    let version = await odhback().opt_getVersion();
+    let version = await odhback.opt_getVersion();
     if (version === null) {
         $('#services-status').text(chrome.i18n.getMessage('msgFailed'));
     } else {
-        populateAnkiDeckAndModel(options);
-        populateAnkiFields(options);
+        populateAnkiDeckAndModel(options, odhback);
+        populateAnkiFields(options, odhback);
         $('#services-status').text(chrome.i18n.getMessage('msgSuccess', [version]));
         $('#anki-options').show();
         if (options.services == 'ankiconnect')
             $('#duplicate-option').show();
         else {
             $('#duplicate-option').hide();
-    }
-
+        }
     }
 }
 
@@ -102,38 +163,37 @@ function onHiddenClicked() {
     $('.sl-col-cloud').toggleClass('hidden');
 }
 
-async function onAnkiTypeChanged(e) {
+async function onAnkiTypeChanged(e, odhback) {
     if (e.originalEvent) {
         let options = await optionsLoad();
-        populateAnkiFields(options);
-
+        populateAnkiFields(options, odhback);
     }
 }
 
-async function onLoginClicked(e) {
+async function onLoginClicked(e, odhback) {
     if (e.originalEvent) {
         let options = await optionsLoad();
         options.id = $('#id').val();
         options.password = $('#password').val();
 
         $('#services-status').text(chrome.i18n.getMessage('msgConnecting'));
-        await odhback().ankiweb.initConnection(options, true); // set param forceLogout = true
+        await odhback.ankiweb.initConnection(options, true); // set param forceLogout = true
 
-        let newOptions = await odhback().opt_optionsChanged(options);
-        updateAnkiStatus(newOptions);
+        let newOptions = await odhback.opt_optionsChanged(options);
+        updateAnkiStatus(newOptions, odhback);
     }
 }
 
-async function onServicesChanged(e) {
+async function onServicesChanged(e, odhback) {
     if (e.originalEvent) {
         let options = await optionsLoad();
         options.services = $('#services').val();
-        let newOptions = await odhback().opt_optionsChanged(options);
-        updateAnkiStatus(newOptions);
+        let newOptions = await odhback.opt_optionsChanged(options);
+        updateAnkiStatus(newOptions, odhback);
     }
 }
 
-async function onSaveClicked(e) {
+async function onSaveClicked(e, odhback) {
     if (!e.originalEvent) return;
 
     let optionsOld = await optionsLoad();
@@ -165,7 +225,7 @@ async function onSaveClicked(e) {
     options.udfscripts = $('#udfscripts').val();
 
     $('#gif-load').show();
-    let newOptions = await odhback().opt_optionsChanged(options);
+    let newOptions = await odhback.opt_optionsChanged(options);
     $('.gif').hide();
     $('#gif-good').show(1000, () => { $('.gif').hide(); });
 
@@ -180,7 +240,7 @@ function onCloseClicked(e) {
     window.close();
 }
 
-async function onReady() {
+async function onReady(odhback) {
     localizeHtmlPage();
     let options = await optionsLoad();
     $('#enabled').prop('checked', options.enabled);
@@ -212,18 +272,52 @@ async function onReady() {
     populateSysScriptsList(options.sysscripts);
     onHiddenClicked();
 
-    $('#login').click(onLoginClicked);
-    $('#saveload').click(onSaveClicked);
-    $('#saveclose').click(onSaveClicked);
+    $('#login').click(e => onLoginClicked(e, odhback));
+    $('#saveload').click(e => onSaveClicked(e, odhback));
+    $('#saveclose').click(e => onSaveClicked(e, odhback));
     $('#close').click(onCloseClicked);
     $('.gif').hide();
 
     $('.sl-col-onoff, .sl-col-cloud').click(onScriptListChange);
     $('#hidden').click(onHiddenClicked);
-    $('#typename').change(onAnkiTypeChanged);
-    $('#services').change(onServicesChanged);
+    $('#typename').change(e => onAnkiTypeChanged(e, odhback));
+    $('#services').change(e => onServicesChanged(e, odhback));
 
-    updateAnkiStatus(options);
+    updateAnkiStatus(options, odhback);
 }
 
-$(document).ready(utilAsync(onReady));
+// Initialize the options page when the document is ready
+// This is only used in the options page
+if (typeof $ !== 'undefined') {
+    $(document).ready(async () => {
+        try {
+            // 在 Manifest V3 中，使用消息传递替代 getBackgroundPage
+            const odhbackProxy = await (async function() {
+                // 创建一个代理对象，将所有方法调用转换为消息
+                return new Proxy({}, {
+                    get: function(target, prop) {
+                        return async function(...args) {
+                            return new Promise((resolve, reject) => {
+                                chrome.runtime.sendMessage({
+                                    action: prop,
+                                    params: args[0] || {}
+                                }, response => {
+                                    if (chrome.runtime.lastError) {
+                                        console.error('Error sending message:', chrome.runtime.lastError);
+                                        reject(chrome.runtime.lastError);
+                                    } else {
+                                        resolve(response);
+                                    }
+                                });
+                            });
+                        };
+                    }
+                });
+            })();
+            
+            utilAsync(onReady)(odhbackProxy);
+        } catch (error) {
+            console.error('Error initializing options page:', error);
+        }
+    });
+}

@@ -25,5 +25,9 @@ class Agent {
         if (this.target)
             this.target.postMessage({ action, params }, '*');
     }
+}
 
+// 为 Service Worker 环境导出类
+if (typeof self !== 'undefined') {
+    self.Agent = Agent;
 }

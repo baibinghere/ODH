@@ -6,36 +6,46 @@ class Ankiconnect {
     async ankiInvoke(action, params = {}, timeout = 3000) {
         let version = this.version;
         let request = { action, version, params };
-        return new Promise((resolve, reject) => {
-            $.ajax({
-                url: 'http://127.0.0.1:8765',
-                type: 'POST',
-                data: JSON.stringify(request),
-                timeout,
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                success: (response) => {
-                    try {
-                        if (Object.getOwnPropertyNames(response).length != 2) {
-                            throw 'response has an unexpected number of fields';
-                        }
-                        if (!response.hasOwnProperty('error')) {
-                            throw 'response is missing required error field';
-                        }
-                        if (!response.hasOwnProperty('result')) {
-                            throw 'response is missing required result field';
-                        }
-                        if (response.error) {
-                            throw response.error;
-                        }
-                        resolve(response.result);
-                    } catch (e) {
-                        reject(e);
-                    }
+        
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            const response = await fetch('http://127.0.0.1:8765', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8'
                 },
-                error: (xhr, status, err) => resolve(null),
+                body: JSON.stringify(request),
+                signal: controller.signal
             });
-        });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                return null;
+            }
+            
+            const data = await response.json();
+            
+            if (Object.getOwnPropertyNames(data).length != 2) {
+                throw 'response has an unexpected number of fields';
+            }
+            if (!data.hasOwnProperty('error')) {
+                throw 'response is missing required error field';
+            }
+            if (!data.hasOwnProperty('result')) {
+                throw 'response is missing required result field';
+            }
+            if (data.error) {
+                throw data.error;
+            }
+            
+            return data.result;
+        } catch (error) {
+            console.error('AnkiConnect error:', error);
+            return null;
+        }
     }
 
     async addNote(note) {
@@ -61,4 +71,9 @@ class Ankiconnect {
         let version = await this.ankiInvoke('version', {}, 100);
         return version ? 'ver:' + version : null;
     }
+}
+
+// 为 Service Worker 环境导出类
+if (typeof self !== 'undefined') {
+    self.Ankiconnect = Ankiconnect;
 }

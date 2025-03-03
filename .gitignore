@@ -14,6 +14,9 @@
 !.vscode/extensions.json
 *.code-workspace
 
+# IDE - Jetbrains
+.idea
+
 # Web store zip
 *.zip
 *.json
@@ -23,3 +26,4 @@
 
 # for Mac
 .DS_Store
+
