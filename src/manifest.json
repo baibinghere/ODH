@@ -9,7 +9,7 @@
         "48": "img/icon48.png",
         "128": "img/icon128.png"
     },
-    "browser_action": {
+    "action": {
         "default_icon": {
             "19": "img/icon19.png",
             "38": "img/icon38.png"
@@ -18,7 +18,7 @@
     },
     "author": "Zhenyu Huang, Bing Bai",
     "background": {
-        "service_worker": "service_worker.js",
+        "service_worker": "bg/service_worker.js",
         "type": "module"
     },
     "content_scripts": [
@@ -41,12 +41,12 @@
     ],
     "minimum_chrome_version": "88.0.0.0",
     "options_ui": {
-        "page": "bg/options.html"
+        "page": "bg/options.html",
+        "open_in_tab": true
     },
     "permissions": [
-        "webRequest",
-        "webRequestBlocking",
-        "storage"
+        "storage",
+        "declarativeNetRequest"
     ],
     "host_permissions": [
         "https://ankiweb.net/*",

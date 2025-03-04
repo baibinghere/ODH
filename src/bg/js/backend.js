@@ -1,5 +1,11 @@
-/* global Ankiconnect, Ankiweb, Deinflector, Builtin, Agent, optionsLoad, optionsSave */
-class ODHBack {
+import {Ankiconnect} from "./ankiconnect";
+import {Agent} from "./agent";
+import {Builtin} from "./builtin";
+import {Deinflector} from "./deinflector";
+import {Ankiweb} from "./ankiweb";
+
+
+export class ODHBack {
     constructor() {
         this.audios = {};
         this.options = null;
@@ -28,7 +34,7 @@ class ODHBack {
     }
 
     onCommand(command) {
-        if (command != 'enabled') return;
+        if (command !== 'enabled') return;
         this.options.enabled = !this.options.enabled;
         this.setFrontendOptions(this.options);
         optionsSave(this.options);
@@ -89,7 +95,7 @@ class ODHBack {
         let note = {
             deckName: options.deckname,
             modelName: options.typename,
-            options: { allowDuplicate: options.duplicate == '1' ? true : false },
+            options: { allowDuplicate: options.duplicate === '1' },
             fields: {},
             tags: []
         };
@@ -238,7 +244,7 @@ class ODHBack {
         }
     }
 
-    // Option page and Brower Action page requests handlers.
+    // Option page and Browser Action page requests handlers.
     async opt_optionsChanged(options) {
         this.setFrontendOptions(options);
 
@@ -259,7 +265,7 @@ class ODHBack {
         let defaultscripts = ['builtin_encn_Collins'];
         let newscripts = `${options.sysscripts},${options.udfscripts}`;
         let loadresults = null;
-        if (!this.options || (`${this.options.sysscripts},${this.options.udfscripts}` != newscripts)) {
+        if (!this.options || (`${this.options.sysscripts},${this.options.udfscripts}` !== newscripts)) {
             const scriptsset = Array.from(new Set(defaultscripts.concat(newscripts.split(',').filter(x => x).map(x => x.trim()))));
             loadresults = await this.loadScripts(scriptsset);
         }

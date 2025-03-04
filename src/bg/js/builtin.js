@@ -1,4 +1,4 @@
-class Builtin {
+export class Builtin {
     constructor() {
         this.dicts = {};
     }

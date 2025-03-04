@@ -1,4 +1,4 @@
-class Deinflector {
+export class Deinflector {
     constructor() {
         this.path = 'data/wordforms.json';
         this.wordforms = null;

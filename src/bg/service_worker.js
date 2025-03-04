@@ -1,107 +1,20 @@
 // ODH Service Worker - Entry point for Manifest V3 extension
-
-// 使用 importScripts 加载依赖模块
-self.importScripts(
-    './js/ankiconnect.js',
-    './js/ankiweb.js',
-    './js/builtin.js',
-    './js/deinflector.js',
-    './js/agent.js',
-    './js/options.js',
-    './js/worker-manager.js',
-    './js/utils.js'
-);
-
-// 最后加载 backend.js，确保其他依赖已经加载
-self.importScripts('./js/backend.js');
+import {ODHBack} from "./js/backend";
 
 // 初始化后端
 async function initializeBackend() {
     try {
-        console.log('Initializing ODH backend...');
-
-        // 检查依赖模块是否正确加载
-        console.log('Checking dependencies...');
-        if (typeof self.Ankiconnect !== 'function') {
-            console.error('Ankiconnect class is not available');
-        } else {
-            console.log('Ankiconnect class is available');
-        }
-
-        if (typeof self.Ankiweb !== 'function') {
-            console.error('Ankiweb class is not available');
-        } else {
-            console.log('Ankiweb class is available');
-        }
-
-        if (typeof self.optionsLoad !== 'function') {
-            console.error('optionsLoad function is not available');
-        } else {
-            console.log('optionsLoad function is available');
-        }
-
-        // 检查 ODHBack 是否可用
-        if (typeof self.ODHBack !== 'function') {
-            console.error('ODHBack class is not available');
-            return;
-        }
-
         // 检查 odhback 实例是否已经创建
         if (typeof self.odhback !== 'object' || self.odhback === null) {
             console.log('Creating new ODHBack instance...');
-            self.odhback = new self.ODHBack();
+            self.odhback = new ODHBack();
         }
-
-        // 检查 api_initBackend 方法是否可用
-        if (typeof self.odhback.api_initBackend !== 'function') {
-            console.error('api_initBackend method is not available');
-
-            // 尝试手动初始化
-            console.log('Attempting manual initialization...');
-
-            // 加载选项
-            const options = await optionsLoad();
-            if (options) {
-                console.log('Options loaded successfully:', options);
-
-                // 初始化 Ankiweb 连接
-                if (typeof self.odhback.ankiweb === 'object' &&
-                    typeof self.odhback.ankiweb.initConnection === 'function') {
-                    try {
-                        console.log('Initializing Ankiweb connection...');
-                        await self.odhback.ankiweb.initConnection(options);
-                        console.log('Ankiweb connection initialized successfully');
-                    } catch (error) {
-                        console.error('Error initializing Ankiweb connection:', error);
-                    }
-                } else {
-                    console.error('ankiweb object or initConnection method is not available');
-                }
-
-                // 更新选项
-                if (typeof self.odhback.opt_optionsChanged === 'function') {
-                    try {
-                        console.log('Updating options...');
-                        await self.odhback.opt_optionsChanged(options);
-                        console.log('Options updated successfully');
-                    } catch (error) {
-                        console.error('Error updating options:', error);
-                    }
-                } else {
-                    console.error('opt_optionsChanged method is not available');
-                }
-            } else {
-                console.warn('No options found, using defaults');
-            }
-        } else {
-            // 正常初始化
-            console.log('Calling api_initBackend...');
-            try {
-                const result = await self.odhback.api_initBackend({});
-                console.log('ODH backend initialized successfully, result:', result);
-            } catch (error) {
-                console.error('Error calling api_initBackend:', error);
-            }
+        console.log('Calling api_initBackend...');
+        try {
+            const result = await self.odhback.api_initBackend({});
+            console.log('ODH backend initialized successfully, result:', result);
+        } catch (error) {
+            console.error('Error calling api_initBackend:', error);
         }
     } catch (error) {
         console.error('Error initializing ODH backend:', error);

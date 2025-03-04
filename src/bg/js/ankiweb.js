@@ -1,9 +1,10 @@
-class Ankiweb {
+export class Ankiweb {
     constructor() {
         this.profile = null;
         this.version = 'web';
         this.id = '';
         this.password = '';
+        //todo: 适配declarativeNetRequest
         chrome.webRequest.onBeforeSendHeaders.addListener(
             this.rewriteHeader,
             { urls: ['https://ankiweb.net/account/login', 'https://ankiuser.net/edit/save'] },
@@ -16,7 +17,6 @@ class Ankiweb {
         this.id = options.id;
         this.password = options.password;
         this.profile = await this.getProfile(retryCount, forceLogout);
-        return;
     }
 
     async addNote(note) {
@@ -84,7 +84,7 @@ class Ankiweb {
                 let doc = parser.parseFromString(result, 'text/html');
                 let title = doc.querySelectorAll('h1');
                 if (!title.length) return Promise.reject(false);
-                if (title[0].innerText == 'Decks') {
+                if (title[0].innerText === 'Decks') {
                     resolve(true);
                 } else {
                     reject(false);
@@ -122,9 +122,9 @@ class Ankiweb {
     async getProfile(retryCount = 1, forceLogout = false) {
         try {
             let resp = await this.api_connect(forceLogout);
-            if (resp.action == 'edit') {
+            if (resp.action === 'edit') {
                 return resp.data;
-            } else if (retryCount > 0 && resp.action == 'login' && await this.api_login(this.id, this.password, resp.data)) {
+            } else if (retryCount > 0 && resp.action === 'login' && await this.api_login(this.id, this.password, resp.data)) {
                 return this.getProfile(retryCount - 1);
             } else {
                 return null;
@@ -217,29 +217,29 @@ class Ankiweb {
         const userAgent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36';
 
         for (let header of e.requestHeaders) {
-            if (header.name.toLowerCase() == 'user-agent') {
+            if (header.name.toLowerCase() === 'user-agent') {
                 header.value = userAgent;
             }
         }
-        if (e.method == 'POST') {
+        if (e.method === 'POST') {
             let origin = 'https://ankiweb.net';
             let referer = 'https://ankiweb.net';
-            if (e.url == 'https://ankiweb.net/account/login') {
+            if (e.url === 'https://ankiweb.net/account/login') {
                 origin = 'https://ankiweb.net';
                 referer = 'https://ankiweb.net/account/login';
             }
-            if (e.url == 'https://ankiuser.net/edit/save') {
+            if (e.url === 'https://ankiuser.net/edit/save') {
                 origin = 'https://ankiuser.net';
                 referer = 'https://ankiuser.net/edit/';
             }
             let hasOrigin = false;
             let hasReferer = false;
             for (let header of e.requestHeaders) {
-                if (header.name.toLowerCase() == 'origin') {
+                if (header.name.toLowerCase() === 'origin') {
                     header.value = origin;
                     hasOrigin = true;
                 }
-                if (header.name.toLowerCase() == 'referer') {
+                if (header.name.toLowerCase() === 'referer') {
                     header.value = referer;
                     hasReferer = true;
                 }
