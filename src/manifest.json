@@ -18,7 +18,7 @@
     },
     "author": "Zhenyu Huang, Bing Bai",
     "background": {
-        "service_worker": "bg/service_worker.js",
+        "service_worker": "bg/service-worker.js",
         "type": "module"
     },
     "content_scripts": [
@@ -46,11 +46,15 @@
     },
     "permissions": [
         "storage",
-        "declarativeNetRequest"
+        "declarativeNetRequest",
+        "scripting",
+        "tabs",
+        "activeTab"
     ],
     "host_permissions": [
         "https://ankiweb.net/*",
-        "https://ankiuser.net/*"
+        "https://ankiuser.net/*",
+        "*://*/*"
     ],
     "sandbox": {
         "pages": [
@@ -60,6 +64,7 @@
     "web_accessible_resources": [
         {
             "resources": [
+                "bg/js/*.js",
                 "fg/css/frame.css",
                 "fg/css/spell.css",
                 "fg/js/frame.js",

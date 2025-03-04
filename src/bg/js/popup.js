@@ -15,6 +15,7 @@ function populateDictionary(dicts) {
 }
 
 async function updateAnkiStatus(options) {
+    console.log("updateAnkiStatus: ", options);
     let version = await odhback().opt_getVersion();
     if (version === null) {
         $('.anki-options').hide();

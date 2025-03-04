@@ -60,8 +60,13 @@ function utilAsync(func) {
     };
 }
 
+// 我们需要拿到backend.js中的odhback对象。
 function odhback() {
-    return chrome.extension.getBackgroundPage().odhback;
+    console.log('odhback');
+    chrome.runtime.sendMessage({ action: "getODHBack" }, (response) => {
+        console.log("BING!!");
+        console.log("response from getODHBack:", response);
+    });
 }
 
 function localizeHtmlPage() {

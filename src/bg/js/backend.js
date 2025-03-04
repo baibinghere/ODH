@@ -1,9 +1,7 @@
-import {Ankiconnect} from "./ankiconnect";
-import {Agent} from "./agent";
-import {Builtin} from "./builtin";
-import {Deinflector} from "./deinflector";
-import {Ankiweb} from "./ankiweb";
-
+import {Ankiconnect} from "./ankiconnect.js";
+import {Builtin} from "./builtin.js";
+import {Deinflector} from "./deinflector.js";
+import {Ankiweb} from "./ankiweb.js";
 
 export class ODHBack {
     constructor() {
@@ -22,52 +20,97 @@ export class ODHBack {
         this.builtin = new Builtin();
         this.builtin.loadData();
 
-        this.agent = new Agent(document.getElementById('sandbox').contentWindow);
+        // Remove Agent initialization as it requires DOM
+        // this.agent = new Agent(document.getElementById('sandbox').contentWindow);
 
-        chrome.runtime.onMessage.addListener(this.onMessage.bind(this));
-        window.addEventListener('message', e => this.onSandboxMessage(e));
+        // Service Worker specific listeners
+        this.setupListeners();
+    }
+
+    setupListeners() {
+        // Service Worker specific event listeners
         chrome.runtime.onInstalled.addListener(this.onInstalled.bind(this));
-        chrome.tabs.onCreated.addListener((tab) => this.onTabReady(tab.id));
-        chrome.tabs.onUpdated.addListener(this.onTabReady.bind(this));
         chrome.commands.onCommand.addListener((command) => this.onCommand(command));
-
     }
 
     onCommand(command) {
         if (command !== 'enabled') return;
         this.options.enabled = !this.options.enabled;
         this.setFrontendOptions(this.options);
-        optionsSave(this.options);
+        this.optionsSave(this.options);
     }
 
     onInstalled(details) {
         if (details.reason === 'install') {
-            chrome.tabs.create({ url: chrome.extension.getURL('bg/guide.html') });
+            chrome.tabs.create({ url: chrome.runtime.getURL('bg/guide.html') });
             return;
         }
         if (details.reason === 'update') {
-            chrome.tabs.create({ url: chrome.extension.getURL('bg/update.html') });
+            chrome.tabs.create({ url: chrome.runtime.getURL('bg/update.html') });
             return;
         }
     }
 
-    onTabReady(tabId) {
-        this.tabInvoke(tabId, 'setFrontendOptions', { options: this.options });
-    }
-
     setFrontendOptions(options) {
+        if (!options) return;
 
         switch (options.enabled) {
             case false:
-                chrome.browserAction.setBadgeText({ text: 'off' });
+                chrome.action.setBadgeText({ text: 'off' });
                 break;
             case true:
-                chrome.browserAction.setBadgeText({ text: '' });
+                chrome.action.setBadgeText({ text: '' });
                 break;
         }
-        this.tabInvokeAll('setFrontendOptions', {
-            options
-        });
+
+        // Notify all tabs about the options change
+        this.broadcastMessage('setFrontendOptions', { options });
+    }
+
+    // Helper method to broadcast message to all tabs
+    async broadcastMessage(action, params) {
+        const tabs = await chrome.tabs.query({});
+        for (const tab of tabs) {
+            try {
+                await chrome.tabs.sendMessage(tab.id, { action, params });
+            } catch (error) {
+                console.warn(`Failed to send message to tab ${tab.id}:`, error);
+            }
+        }
+    }
+
+    // Message handling
+    async handleMessage(request) {
+        const { action, params } = request;
+        const method = this['api_' + action];
+
+        if (typeof method === 'function') {
+            try {
+                return await method.call(this, params);
+            } catch (error) {
+                console.error(`Error in ${action}:`, error);
+                throw error;
+            }
+        }
+        throw new Error(`Unknown action: ${action}`);
+    }
+
+    async api_initBackend(params) {
+        try {
+            const options = await this.optionsLoad();
+            await this.ankiweb.initConnection(options);
+
+            if (options.dictLibrary) {
+                options.sysscripts = options.dictLibrary;
+                options.dictLibrary = '';
+            }
+
+            await this.opt_optionsChanged(options);
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to initialize backend:', error);
+            throw error;
+        }
     }
 
     checkLastError(){
@@ -107,7 +150,7 @@ export class ODHBack {
         }
 
         let tags = options.tags.trim();
-        if (tags.length > 0) 
+        if (tags.length > 0)
             note.tags = tags.split(' ');
 
         if (options.audio && notedef.audios.length > 0) {
@@ -125,126 +168,23 @@ export class ODHBack {
         return note;
     }
 
-    // Message Hub and Handler start from here ...
-    onMessage(request, sender, callback) {
-        const { action, params } = request;
-        const method = this['api_' + action];
-
-        if (typeof(method) === 'function') {
-            params.callback = callback;
-            method.call(this, params);
-        }
-        return true;
+    // Helper methods for options
+    async optionsLoad() {
+        return new Promise((resolve) => {
+            chrome.storage.local.get(null, (options) => {
+                resolve(options || {});
+            });
+        });
     }
 
-    onSandboxMessage(e) {
-        const {
-            action,
-            params
-        } = e.data;
-        const method = this['api_' + action];
-        if (typeof(method) === 'function')
-            method.call(this, params);
-
+    async optionsSave(options) {
+        return new Promise((resolve) => {
+            chrome.storage.local.set(options, () => {
+                resolve();
+            });
+        });
     }
 
-    async api_initBackend(params) {
-        let options = await optionsLoad();
-        this.ankiweb.initConnection(options);
-
-        //to do: will remove it late after all users migrate to new version.
-        if (options.dictLibrary) { // to migrate legacy scripts list to new list.
-            options.sysscripts = options.dictLibrary;
-            options.dictLibrary = '';
-        }
-        this.opt_optionsChanged(options);
-    }
-
-    async api_Fetch(params) {
-        let { url, callbackId } = params;
-
-        let request = {
-            url,
-            type: 'GET',
-            dataType: 'text',
-            timeout: 3000,
-            error: (xhr, status, error) => this.callback(null, callbackId),
-            success: (data, status) => this.callback(data, callbackId)
-        };
-        $.ajax(request);
-    }
-
-    async api_Deinflect(params) {
-        let { word, callbackId } = params;
-        this.callback(this.deinflector.deinflect(word), callbackId);
-    }
-
-    async api_getBuiltin(params) {
-        let { dict, word, callbackId } = params;
-        this.callback(this.builtin.findTerm(dict, word), callbackId);
-    }
-
-    async api_getLocale(params) {
-        let { callbackId } = params;
-        this.callback(chrome.i18n.getUILanguage(), callbackId);
-    }
-
-    // front end message handler
-    async api_isConnected(params) {
-        let callback = params.callback;
-        callback(await this.opt_getVersion());
-    }
-
-    async api_getTranslation(params) {
-        let { expression, callback } = params;
-
-        // Fix https://github.com/ninja33/ODH/issues/97
-        if (expression.endsWith(".")) {
-            expression = expression.slice(0, -1);
-        }
-
-        try {
-            let result = await this.findTerm(expression);
-            callback(result);
-        } catch (err) {
-            console.error(err);
-            callback(null);
-        }
-    }
-
-    async api_addNote(params) {
-        let { notedef, callback } = params;
-
-        const note = this.formatNote(notedef);
-        try {
-            let result = await this.target.addNote(note);
-            callback(result);
-        } catch (err) {
-            console.error(err);
-            callback(null);
-        }
-    }
-
-    async api_playAudio(params) {
-        let { url, callback } = params;
-        
-        for (let key in this.audios) {
-            this.audios[key].pause();
-        }
-
-        try {
-            const audio = this.audios[url] || new Audio(url);
-            audio.currentTime = 0;
-            audio.play();
-            this.audios[url] = audio;
-            callback(true);
-        } catch (err) {
-            console.error(err);
-            callback(null);
-        }
-    }
-
-    // Option page and Browser Action page requests handlers.
     async opt_optionsChanged(options) {
         this.setFrontendOptions(options);
 
@@ -277,10 +217,9 @@ export class ODHBack {
             this.options.dictNamelist = loadresults.map(x => x.result);
         }
         await this.setScriptsOptions(this.options);
-        optionsSave(this.options);
+        await this.optionsSave(this.options);
         return this.options;
     }
-
 
     async opt_getDeckNames() {
         return this.target ? await this.target.getDeckNames() : null;
@@ -298,7 +237,6 @@ export class ODHBack {
         return this.target ? await this.target.getVersion() : null;
     }
 
-    // Sandbox communication start here
     async loadScripts(list) {
         let promises = list.map((name) => this.loadScript(name));
         let results = await Promise.all(promises);
@@ -307,27 +245,26 @@ export class ODHBack {
 
     async loadScript(name) {
         return new Promise((resolve, reject) => {
-            this.agent.postMessage('loadScript', { name }, result => resolve(result));
+            // Placeholder for loadScript method
+            resolve({ result: { objectname: name } });
         });
     }
 
     async setScriptsOptions(options) {
         return new Promise((resolve, reject) => {
-            this.agent.postMessage('setScriptsOptions', { options }, result => resolve(result));
+            // Placeholder for setScriptsOptions method
+            resolve({ result: { objectname: 'setScriptsOptions' } });
         });
     }
 
     async findTerm(expression) {
         return new Promise((resolve, reject) => {
-            this.agent.postMessage('findTerm', { expression }, result => resolve(result));
+            // Placeholder for findTerm method
+            resolve({ result: expression });
         });
     }
 
     callback(data, callbackId) {
-        this.agent.postMessage('callback', { data, callbackId });
+        // Placeholder for callback method
     }
-
-
 }
-
-window.odhback = new ODHBack();

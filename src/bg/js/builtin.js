@@ -13,16 +13,23 @@ export class Builtin {
     }
 
     static async loadData(path) {
-        return new Promise((resolve, reject) => {
-            let request = {
-                url: path,
-                type: 'GET',
-                dataType: 'json',
-                timeout: 5000,
-                error: (xhr, status, error) => reject(error),
-                success: (data, status) => resolve(data)
-            };
-            $.ajax(request);
+        return new Promise(async (resolve, reject) => {
+            try {
+                let response = await fetch(path, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 5000
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                let data = await response.json();
+                resolve(data);
+            } catch (error) {
+                reject(error);
+            }
         });
     }
     

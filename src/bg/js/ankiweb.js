@@ -4,12 +4,28 @@ export class Ankiweb {
         this.version = 'web';
         this.id = '';
         this.password = '';
-        //todo: 适配declarativeNetRequest
-        chrome.webRequest.onBeforeSendHeaders.addListener(
-            this.rewriteHeader,
-            { urls: ['https://ankiweb.net/account/login', 'https://ankiuser.net/edit/save'] },
-            ['requestHeaders', 'blocking', 'extraHeaders']
-        );
+        chrome.declarativeNetRequest.updateDynamicRules({
+            addRules: [{
+                id: 1,
+                priority: 1,
+                action: { type: 'modifyHeaders', requestHeaders: [
+                        { header: 'User-Agent', operation: 'set', value: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36' },
+                        { header: 'origin', operation: 'set', value: 'https://ankiweb.net' },
+                        { header: 'referer', operation: 'set', value: 'https://ankiweb.net/account/login' }
+                    ]},
+                condition: { urlFilter: 'https://ankiweb.net/account/login', resourceTypes: ['xmlhttprequest'] }
+            }, {
+                id: 2,
+                priority: 1,
+                action: { type: 'modifyHeaders', requestHeaders: [
+                        { header: 'User-Agent', operation: 'set', value: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36' },
+                        { header: 'origin', operation: 'set', value: 'https://ankiuser.net' },
+                        { header: 'referer', operation: 'set', value: 'https://ankiuser.net/edit/' }
+                    ]},
+                condition: { urlFilter: 'https://ankiuser.net/edit/save', resourceTypes: ['xmlhttprequest'] }
+            }],
+            removeRuleIds: [1, 2]
+        });
     }
 
     async initConnection(options, forceLogout = false) {
