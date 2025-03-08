@@ -2,14 +2,14 @@
 async function populateAnkiDeckAndModel(options) {
     let names = [];
     $('#deckname').empty();
-    names = await odhback().opt_getDeckNames();
+    names = await sendtoBackend({action:'opt_getDeckNames', params:{}})
     if (names !== null) {
         names.forEach(name => $('#deckname').append($('<option>', { value: name, text: name })));
     }
     $('#deckname').val(options.deckname);
 
     $('#typename').empty();
-    names = await odhback().opt_getModelNames();
+    names = await sendtoBackend({action:'opt_getModelNames', params:{}})
     if (names !== null) {
         names.forEach(name => $('#typename').append($('<option>', { value: name, text: name })));
     }
@@ -20,7 +20,7 @@ async function populateAnkiFields(options) {
     const modelName = $('#typename').val() || options.typename;
     if (modelName === null) return;
 
-    let names = await odhback().opt_getModelFieldNames(modelName);
+    let names = await sendtoBackend({action:'opt_getModelFieldNames', params:modelName})
     if (names == null) return;
 
     let fields = ['expression', 'reading', 'extrainfo', 'definition', 'definitions', 'sentence', 'url', 'audio'];
@@ -35,26 +35,24 @@ async function populateAnkiFields(options) {
 async function updateAnkiStatus(options) {
     $('#services-status').text(chrome.i18n.getMessage('msgConnecting'));
     $('#anki-options').hide();
-    if (options.services == 'ankiweb')
+    if (options.services === 'ankiweb')
         $('#user-options').show();
     else {
         $('#user-options').hide();
     }
-
-    let version = await odhback().opt_getVersion();
+    let version = await sendtoBackend({action:'opt_getVersion', params:{}})
     if (version === null) {
         $('#services-status').text(chrome.i18n.getMessage('msgFailed'));
     } else {
-        populateAnkiDeckAndModel(options);
-        populateAnkiFields(options);
+        await populateAnkiDeckAndModel(options);
+        await populateAnkiFields(options);
         $('#services-status').text(chrome.i18n.getMessage('msgSuccess', [version]));
         $('#anki-options').show();
-        if (options.services == 'ankiconnect')
+        if (options.services === 'ankiconnect')
             $('#duplicate-option').show();
         else {
             $('#duplicate-option').hide();
-    }
-
+        }
     }
 }
 
@@ -92,7 +90,7 @@ function populateSysScriptsList(dictLibrary) {
 function onScriptListChange() {
     let dictLibrary = [];
     $('.sl-row').each(function() {
-        if ($('.sl-col-onoff', this).prop('checked') == true)
+        if ($('.sl-col-onoff', this).prop('checked') === true)
             dictLibrary.push($('.sl-col-cloud', this).prop('checked') ? 'lib://' + $('.sl-col-name', this).text() : $('.sl-col-name', this).text());
     });
     $('#sysscripts').val(dictLibrary.join());
@@ -105,8 +103,7 @@ function onHiddenClicked() {
 async function onAnkiTypeChanged(e) {
     if (e.originalEvent) {
         let options = await optionsLoad();
-        populateAnkiFields(options);
-
+        await populateAnkiFields(options);
     }
 }
 
@@ -120,7 +117,7 @@ async function onLoginClicked(e) {
         await odhback().ankiweb.initConnection(options, true); // set param forceLogout = true
 
         let newOptions = await odhback().opt_optionsChanged(options);
-        updateAnkiStatus(newOptions);
+        await updateAnkiStatus(newOptions);
     }
 }
 
@@ -128,8 +125,8 @@ async function onServicesChanged(e) {
     if (e.originalEvent) {
         let options = await optionsLoad();
         options.services = $('#services').val();
-        let newOptions = await odhback().opt_optionsChanged(options);
-        updateAnkiStatus(newOptions);
+        let newOptions = await sendtoBackend({action:'opt_optionsChanged', params:options})
+        await updateAnkiStatus(newOptions);
     }
 }
 
@@ -165,14 +162,15 @@ async function onSaveClicked(e) {
     options.udfscripts = $('#udfscripts').val();
 
     $('#gif-load').show();
-    let newOptions = await odhback().opt_optionsChanged(options);
+
+    let newOptions = await sendtoBackend({action:'opt_optionsChanged', params:options})
     $('.gif').hide();
     $('#gif-good').show(1000, () => { $('.gif').hide(); });
 
     populateDictionary(newOptions.dictNamelist);
     $('#dict').val(newOptions.dictSelected);
 
-    if (e.target.id == 'saveclose')
+    if (e.target.id === 'saveclose')
         window.close();
 }
 
@@ -223,7 +221,7 @@ async function onReady() {
     $('#typename').change(onAnkiTypeChanged);
     $('#services').change(onServicesChanged);
 
-    updateAnkiStatus(options);
+    await updateAnkiStatus(options);
 }
 
 $(document).ready(utilAsync(onReady));

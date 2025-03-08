@@ -1,8 +1,8 @@
 /* global odhback, localizeHtmlPage, utilAsync, optionsLoad, optionsSave */
 async function populateAnkiDeckAndModel(options) {
-    let names = [];
+    let names;
     $('#deckname').empty();
-    names = await odhback().opt_getDeckNames();
+    names = await sendtoBackend({action:'opt_getDeckNames', params:{}})
     if (names !== null) {
         names.forEach(name => $('#deckname').append($('<option>', { value: name, text: name })));
     }
@@ -16,7 +16,7 @@ function populateDictionary(dicts) {
 
 async function updateAnkiStatus(options) {
     console.log("updateAnkiStatus: ", options);
-    let version = await odhback().opt_getVersion();
+    let version = await sendtoBackend({action:'opt_getVersion', params:{}})
     if (version === null) {
         $('.anki-options').hide();
     } else {
@@ -38,8 +38,8 @@ async function onOptionChanged(e) {
 
     options.deckname = $('#deckname').val();
     options.tags = $('#tags').val();
-    let newOptions = await odhback().opt_optionsChanged(options);
-    optionsSave(newOptions);
+    let newOptions = await sendtoBackend({action:'opt_optionsChanged', params:options})
+    await optionsSave(newOptions);
 }
 
 function onMoreOptions() {

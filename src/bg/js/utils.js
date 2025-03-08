@@ -63,9 +63,17 @@ function utilAsync(func) {
 // 我们需要拿到backend.js中的odhback对象。
 function odhback() {
     console.log('odhback');
-    chrome.runtime.sendMessage({ action: "getODHBack" }, (response) => {
-        console.log("BING!!");
-        console.log("response from getODHBack:", response);
+    // chrome.runtime.sendMessage({ action: "getODHBack" }, (response) => {
+    //     console.log("BING!!");
+    //     console.log("response from getODHBack:", response);
+    // });
+}
+
+async function sendtoBackend(request){
+    return new Promise((resolve, reject)=>{
+        chrome.runtime.sendMessage(request, result => {
+            resolve(result);
+        });
     });
 }
 

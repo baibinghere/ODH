@@ -7,10 +7,32 @@ const odhback = new ODHBack();
 // 监听来自内容脚本和弹出窗口的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Service worker received message:', message);
+    let r = null;
     switch (message.action) {
-        case "getODHBack":
-            return odhback;
+        case "opt_getVersion":
+            odhback.opt_getVersion().then(result => sendResponse(result));
+            break;
+        case "opt_getDeckNames":
+            odhback.opt_getDeckNames().then(result => sendResponse(result));
+            break;
+        case "opt_getModelNames":
+            odhback.opt_getModelNames().then(result => sendResponse(result));
+            break;
+        case "opt_optionsChanged":
+            odhback.opt_optionsChanged(message.params).then(result => sendResponse(result));
+            break;
+        case "opt_getModelFieldNames":
+            odhback.opt_getModelFieldNames(message.params).then(result => sendResponse(result));
+            break;
+        case "getTranslation":
+            console.log("getTranslation");
+            sendResponse({ data: {}} );
+            break;
+        default:
+            sendResponse({ data: {}} );
+            break;
     }
+    return true;
     // if (!odhback) {
     //     console.error('Backend not initialized, attempting to initialize...');
     //     initializeBackend().then(success => {
