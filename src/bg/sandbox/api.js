@@ -14,6 +14,7 @@ class SandboxAPI {
         });
     }
 
+    // 这里的postMessage将被backend.js中的onSandboxMessage收到
     async deinflect(word) {
         return await this.postMessage('Deinflect', { word });
     }

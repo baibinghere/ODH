@@ -17,14 +17,15 @@ class ODHBack {
         this.builtin.loadData();
 
         this.agent = new Agent(document.getElementById('sandbox').contentWindow);
-
+        // 所有message从fg中的sendMessage发过来，在onMessage处理
         chrome.runtime.onMessage.addListener(this.onMessage.bind(this));
-        window.addEventListener('message', e => this.onSandboxMessage(e));
         chrome.runtime.onInstalled.addListener(this.onInstalled.bind(this));
         chrome.tabs.onCreated.addListener((tab) => this.onTabReady(tab.id));
         chrome.tabs.onUpdated.addListener(this.onTabReady.bind(this));
+        // 默认为Alt+Q，打开/关闭词典功能
         chrome.commands.onCommand.addListener((command) => this.onCommand(command));
-
+        // 订阅的是api.js中postMessage的信息
+        window.addEventListener('message', e => this.onSandboxMessage(e));
     }
 
     onCommand(command) {
@@ -121,6 +122,7 @@ class ODHBack {
     // Message Hub and Handler start from here ...
     onMessage(request, sender, callback) {
         const { action, params } = request;
+        params.callback = callback;
         switch (action) {
             case "initBackend":
                 this.api_initBackend(params);
@@ -335,6 +337,10 @@ class ODHBack {
 
     async findTerm(expression) {
         return new Promise((resolve, reject) => {
+            // 这里的message会发到sandbox中的onBackendMessage
+            // sandbox中的findTerm(调用callback)会调用api.js中的this.agent.postMessage
+            // 而Agent是由window.parent初始化的，所以实际上调用到了window.parent.postMessage
+            // 于是发给了onSandboxMessage
             this.agent.postMessage('findTerm', { expression }, result => resolve(result));
         });
     }

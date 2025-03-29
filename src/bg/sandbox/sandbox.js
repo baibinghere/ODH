@@ -3,6 +3,7 @@ class Sandbox {
     constructor() {
         this.dicts = {};
         this.current = null;
+        // iFrame里的那个window
         window.addEventListener('message', e => this.onBackendMessage(e));
     }
 
