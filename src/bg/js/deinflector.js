@@ -5,7 +5,11 @@ class Deinflector {
     }
 
     async loadData() {
-        this.wordforms = await Deinflector.loadData(this.path);
+        try {
+            this.wordforms = await Deinflector.loadData(this.path);
+        } catch (e) {
+            this.wordforms = {};
+        }
     }
 
     deinflect(term) {
@@ -13,17 +17,8 @@ class Deinflector {
     }
 
     static async loadData(path) {
-        return new Promise((resolve, reject) => {
-            let request = {
-                url: path,
-                type: 'GET',
-                dataType: 'json',
-                timeout: 5000,
-                error: (xhr, status, error) => reject(error),
-                success: (data, status) => resolve(data)
-            };
-            $.ajax(request);
-        });
+        const response = await fetch(chrome.runtime.getURL(path));
+        if (!response.ok) throw new Error('Failed to load ' + path);
+        return await response.json();
     }
-    
 }

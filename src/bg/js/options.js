@@ -1,15 +1,15 @@
-/* global odhback, localizeHtmlPage, utilAsync, optionsLoad, optionsSave */
+/* global callBackground, localizeHtmlPage, utilAsync, optionsLoad, optionsSave */
 async function populateAnkiDeckAndModel(options) {
     let names = [];
     $('#deckname').empty();
-    names = await odhback().opt_getDeckNames();
+    names = await callBackground('getDeckNames');
     if (names !== null) {
         names.forEach(name => $('#deckname').append($('<option>', { value: name, text: name })));
     }
     $('#deckname').val(options.deckname);
 
     $('#typename').empty();
-    names = await odhback().opt_getModelNames();
+    names = await callBackground('getModelNames');
     if (names !== null) {
         names.forEach(name => $('#typename').append($('<option>', { value: name, text: name })));
     }
@@ -20,7 +20,7 @@ async function populateAnkiFields(options) {
     const modelName = $('#typename').val() || options.typename;
     if (modelName === null) return;
 
-    let names = await odhback().opt_getModelFieldNames(modelName);
+    let names = await callBackground('getModelFieldNames', { modelName });
     if (names == null) return;
 
     let fields = ['expression', 'reading', 'extrainfo', 'definition', 'definitions', 'sentence', 'url', 'audio'];
@@ -41,7 +41,7 @@ async function updateAnkiStatus(options) {
         $('#user-options').hide();
     }
 
-    let version = await odhback().opt_getVersion();
+    let version = await callBackground('getVersion');
     if (version === null) {
         $('#services-status').text(chrome.i18n.getMessage('msgFailed'));
     } else {
@@ -117,9 +117,9 @@ async function onLoginClicked(e) {
         options.password = $('#password').val();
 
         $('#services-status').text(chrome.i18n.getMessage('msgConnecting'));
-        await odhback().ankiweb.initConnection(options, true); // set param forceLogout = true
+        await callBackground('ankiwebInit', { options, forceLogout: true });
 
-        let newOptions = await odhback().opt_optionsChanged(options);
+        let newOptions = await callBackground('optionsChanged', options);
         updateAnkiStatus(newOptions);
     }
 }
@@ -128,7 +128,7 @@ async function onServicesChanged(e) {
     if (e.originalEvent) {
         let options = await optionsLoad();
         options.services = $('#services').val();
-        let newOptions = await odhback().opt_optionsChanged(options);
+        let newOptions = await callBackground('optionsChanged', options);
         updateAnkiStatus(newOptions);
     }
 }
@@ -165,7 +165,7 @@ async function onSaveClicked(e) {
     options.udfscripts = $('#udfscripts').val();
 
     $('#gif-load').show();
-    let newOptions = await odhback().opt_optionsChanged(options);
+    let newOptions = await callBackground('optionsChanged', options);
     $('.gif').hide();
     $('#gif-good').show(1000, () => { $('.gif').hide(); });
 

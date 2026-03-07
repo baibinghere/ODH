@@ -1,7 +1,7 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "__MSG_appName__",
-    "version": "0.9.5",
+    "version": "1.0.0",
     "default_locale": "en",
     "description": "__MSG_appDesc__",
     "icons": {
@@ -9,7 +9,7 @@
         "48": "img/icon48.png",
         "128": "img/icon128.png"
     },
-    "browser_action": {
+    "action": {
         "default_icon": {
             "19": "img/icon19.png",
             "38": "img/icon38.png"
@@ -18,7 +18,7 @@
     },
     "author": "Zhenyu Huang",
     "background": {
-        "page": "bg/background.html"
+        "service_worker": "bg/js/background.js"
     },
     "content_scripts": [{
         "matches": ["*://*/*", "file://*/*"],
@@ -31,34 +31,51 @@
         ],
         "css": ["fg/css/client.css"]
     }],
-    "minimum_chrome_version": "50.0.0.0",
+    "minimum_chrome_version": "109",
     "options_ui": {
         "page": "bg/options.html"
     },
-    "permissions": ["webRequest", "webRequestBlocking", "https://ankiweb.net/*", "https://ankiuser.net/*", "storage"],
+    "permissions": [
+        "storage",
+        "offscreen",
+        "declarativeNetRequest"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
     "sandbox": {
         "pages": ["bg/sandbox/sandbox.html"]
     },
-    "web_accessible_resources": [
-        "fg/css/frame.css",
-        "fg/css/spell.css",
-        "fg/js/frame.js",
-        "fg/js/spell.js",
-        "fg/font/spell-icons.ttf",
-        "fg/font/spell-icons.woff",
-        "fg/img/play.png",
-        "fg/img/plus.png",
-        "fg/img/cloud.png",
-        "fg/img/load.gif",
-        "fg/img/fail.png",
-        "fg/img/good.png"
-    ],
+    "declarative_net_request": {
+        "rule_resources": [{
+            "id": "ankiweb_rules",
+            "enabled": true,
+            "path": "dnr_rules.json"
+        }]
+    },
+    "web_accessible_resources": [{
+        "resources": [
+            "fg/css/frame.css",
+            "fg/css/spell.css",
+            "fg/js/frame.js",
+            "fg/js/spell.js",
+            "fg/font/spell-icons.ttf",
+            "fg/font/spell-icons.woff",
+            "fg/img/play.png",
+            "fg/img/plus.png",
+            "fg/img/cloud.png",
+            "fg/img/load.gif",
+            "fg/img/fail.png",
+            "fg/img/good.png"
+        ],
+        "matches": ["<all_urls>"]
+    }],
     "commands": {
-          "enabled": {
+        "enabled": {
             "suggested_key": {
-              "default": "Alt+Q"
+                "default": "Alt+Q"
             },
             "description": "__MSG_lblEnabled__"
-          }
+        }
     }
 }

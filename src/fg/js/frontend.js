@@ -116,9 +116,9 @@ class ODHFront {
         if (typeof(method) === 'function') {
             params.callback = callback;
             method.call(this, params);
+        } else {
+            callback();
         }
-
-        callback();
     }
 
     api_setFrontendOptions(params) {

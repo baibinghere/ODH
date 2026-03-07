@@ -50,7 +50,7 @@ async function optionsLoad() {
 
 async function optionsSave(options) {
     return new Promise((resolve, reject) => {
-        chrome.storage.local.set(sanitizeOptions(options), resolve());
+        chrome.storage.local.set(sanitizeOptions(options), () => resolve());
     });
 }
 
@@ -60,8 +60,13 @@ function utilAsync(func) {
     };
 }
 
-function odhback() {
-    return chrome.extension.getBackgroundPage().odhback;
+function callBackground(action, params = {}) {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action, params }, (response) => {
+            void chrome.runtime.lastError;
+            resolve(response);
+        });
+    });
 }
 
 function localizeHtmlPage() {
