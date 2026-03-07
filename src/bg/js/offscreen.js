@@ -22,7 +22,7 @@ function sanitizeOptions(options) {
         sentence: '',
         url: '',
         audio: '',
-        sysscripts: 'builtin_encn_Collins,encn_Collins,encn_Cambridge,encn_Oxford,fren_Cambridge,esen_Spanishdict,decn_Eudict,escn_Eudict,frcn_Eudict',
+        sysscripts: 'encn_Collins,encn_Cambridge,encn_Oxford,fren_Cambridge,esen_Spanishdict,decn_Eudict,escn_Eudict,frcn_Eudict',
         udfscripts: '',
         dictSelected: '',
         dictNamelist: [],
@@ -226,6 +226,9 @@ class ODHBack {
             options.sysscripts = options.dictLibrary;
             options.dictLibrary = '';
         }
+        if (options.dictSelected === 'builtin_encn_Collins') {
+            options.dictSelected = '';
+        }
         this.opt_optionsChanged(options);
     }
 
@@ -313,7 +316,7 @@ class ODHBack {
                 this.target = null;
         }
 
-        let defaultscripts = ['builtin_encn_Collins'];
+        let defaultscripts = ['encn_Collins'];
         let newscripts = `${options.sysscripts},${options.udfscripts}`;
         let loadresults = null;
         if (!this.options || (`${this.options.sysscripts},${this.options.udfscripts}` != newscripts)) {

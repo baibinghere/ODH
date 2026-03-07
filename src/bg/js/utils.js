@@ -24,7 +24,7 @@ function sanitizeOptions(options) {
         url: '',
         audio: '',
 
-        sysscripts: 'builtin_encn_Collins,encn_Collins,encn_Cambridge,encn_Oxford,fren_Cambridge,esen_Spanishdict,decn_Eudict,escn_Eudict,frcn_Eudict',
+        sysscripts: 'encn_Collins,encn_Cambridge,encn_Oxford,fren_Cambridge,esen_Spanishdict,decn_Eudict,escn_Eudict,frcn_Eudict',
         udfscripts: '',
 
         dictSelected: '',

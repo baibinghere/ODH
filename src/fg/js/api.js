@@ -1,6 +1,7 @@
 async function sendtoBackend(request){
-    return new Promise((resolve, reject)=>{
+    return new Promise((resolve)=>{
         chrome.runtime.sendMessage(request, result => {
+            void chrome.runtime.lastError;
             resolve(result);
         });
     });
