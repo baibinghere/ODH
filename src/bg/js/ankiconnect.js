@@ -31,6 +31,7 @@ class Ankiconnect {
             }
             return data.result;
         } catch (e) {
+            console.error('ODH AnkiConnect error:', action, e);
             return null;
         }
     }

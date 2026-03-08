@@ -175,8 +175,12 @@ class ODHBack {
 
     formatNote(notedef) {
         let options = this.options;
-        if (!options.deckname || !options.typename || !options.expression)
+        if (!options.deckname || !options.typename || !options.expression) {
+            console.error('ODH formatNote: missing required options', {
+                deckname: options.deckname, typename: options.typename, expression: options.expression
+            });
             return null;
+        }
 
         let note = {
             deckName: options.deckname,
@@ -189,14 +193,14 @@ class ODHBack {
         let fieldnames = ['expression', 'reading', 'extrainfo', 'definition', 'definitions', 'sentence', 'url'];
         for (const fieldname of fieldnames) {
             if (!options[fieldname]) continue;
-            note.fields[options[fieldname]] = notedef[fieldname];
+            note.fields[options[fieldname]] = notedef[fieldname] || '';
         }
 
         let tags = options.tags.trim();
         if (tags.length > 0)
             note.tags = tags.split(' ');
 
-        if (options.audio && notedef.audios.length > 0) {
+        if (options.audio && notedef.audios && notedef.audios.length > 0) {
             note.fields[options.audio] = '';
             let audionumber = Number(options.preferredaudio);
             audionumber = (audionumber && notedef.audios[audionumber]) ? audionumber : 0;
@@ -275,10 +279,19 @@ class ODHBack {
 
     async addNoteResult(notedef) {
         const note = this.formatNote(notedef);
+        if (!note) {
+            console.error('ODH addNote: formatNote returned null, notedef was:', notedef);
+            return null;
+        }
+        console.log('ODH addNote: sending to AnkiConnect:', JSON.stringify(note, null, 2));
         try {
-            return await this.target.addNote(note);
+            const result = await this.target.addNote(note);
+            if (result === null) {
+                console.error('ODH addNote: AnkiConnect returned null (check AnkiConnect error above)');
+            }
+            return result;
         } catch (err) {
-            console.error(err);
+            console.error('ODH addNote error:', err);
             return null;
         }
     }
